@@ -2,6 +2,8 @@
 
 Claude Code 会话结束时自动执行 git commit 的功能，使用 Claude API 生成规范的中文 commit 消息。
 
+[English Documentation](README_EN.md) | 中文文档
+
 ## 功能特性
 
 - ✅ **自动触发**：Claude Code 会话结束时自动执行
@@ -107,18 +109,33 @@ API_TIMEOUT=30
 
 ### 环境变量
 
+> **⚠️ 重要提醒**
+>
+> **不要**将 `ANTHROPIC_API_KEY` 和 `ANTHROPIC_BASE_URL` 放入 `~/.claude/settings.json` 中！
+> 这样会导致 API 调用失败。请将它们配置在环境变量中。
+
 确保设置 `ANTHROPIC_API_KEY` 环境变量：
 
 ```bash
-# 添加到 ~/.zshrc 或 ~/.bashrc
-export ANTHROPIC_API_KEY="your-api-key-here"
+# macOS (zsh) - 添加到 ~/.zshrc
+echo 'export ANTHROPIC_API_KEY="your-api-key-here"' >> ~/.zshrc
+source ~/.zshrc
+
+# Linux (bash) - 添加到 ~/.bashrc
+echo 'export ANTHROPIC_API_KEY="your-api-key-here"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 **可选**：如果使用代理或自定义 API endpoint，设置 `ANTHROPIC_BASE_URL`：
 
 ```bash
-# 例如使用 Cloudflare Workers 代理
-export ANTHROPIC_BASE_URL="https://your-proxy.workers.dev"
+# macOS (zsh) - 例如使用 Cloudflare Workers 代理
+echo 'export ANTHROPIC_BASE_URL="https://your-proxy.workers.dev"' >> ~/.zshrc
+source ~/.zshrc
+
+# Linux (bash)
+echo 'export ANTHROPIC_BASE_URL="https://your-proxy.workers.dev"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 ---
@@ -316,7 +333,9 @@ auto_commit_handler.sh 执行
 
 ## 许可证
 
-MIT License
+GPL-3.0 License
+
+本项目采用 GNU General Public License v3.0 开源协议。
 
 ---
 
