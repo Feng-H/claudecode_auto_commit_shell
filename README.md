@@ -6,10 +6,12 @@ Claude Code 会话结束时自动执行 git commit 的功能，使用 Claude API
 
 - ✅ **自动触发**：Claude Code 会话结束时自动执行
 - ✅ **智能生成消息**：使用 Claude API 分析代码变化，生成规范的 commit 消息
-- ✅ **中文支持**：默认中文 commit 消息，可配置英文
+- ✅ **中文/英文支持**：可配置中文或英文 commit 消息
 - ✅ **自动初始化**：非 git 项目自动执行 git init
 - ✅ **安全检查**：检测敏感信息，防止意外提交
+- ✅ **自定义 API Endpoint**：支持自定义 Claude API 地址（兼容代理）
 - ✅ **配置灵活**：支持多种配置选项
+- ✅ **优雅降级**：API 失败时自动使用本地模板生成消息
 
 ---
 
@@ -110,6 +112,13 @@ API_TIMEOUT=30
 ```bash
 # 添加到 ~/.zshrc 或 ~/.bashrc
 export ANTHROPIC_API_KEY="your-api-key-here"
+```
+
+**可选**：如果使用代理或自定义 API endpoint，设置 `ANTHROPIC_BASE_URL`：
+
+```bash
+# 例如使用 Cloudflare Workers 代理
+export ANTHROPIC_BASE_URL="https://your-proxy.workers.dev"
 ```
 
 ---
@@ -318,6 +327,12 @@ MIT License
 ---
 
 ## 更新日志
+
+### v1.1.0 (2025-12-23)
+- ✨ 新增支持自定义 API Endpoint (`ANTHROPIC_BASE_URL`)
+- ✨ 兼容代理服务（如 Cloudflare Workers）
+- 🔧 优化 API 调用错误处理
+- 📝 更新文档说明
 
 ### v1.0.0 (2024-12-23)
 - 初始版本
