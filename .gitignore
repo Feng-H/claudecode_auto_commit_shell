@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.*.sw*
+
+# Logs
+*.log
+
+# Environment files (may contain sensitive data)
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.temp
