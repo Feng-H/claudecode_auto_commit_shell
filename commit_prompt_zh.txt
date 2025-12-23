@@ -1,0 +1,89 @@
+你是一个项目进度记录员。请根据以下 git diff 内容生成一条用于【自动生成工作日报】的 git 提交信息。
+
+## Git Diff 内容:
+{{DIFF_CONTENT}}
+
+## 要求:
+
+### 1. 格式规范
+```
+<type>(<scope>): <subject>
+
+<icon> <详细描述点1>
+<icon> <详细描述点2>
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+### 2. Type 类型（仅限以下8种）
+- **feat** ✨ - 新功能 (new feature)
+- **fix** 🐛 - Bug修复 (bug fix)
+- **docs** 📝 - 文档更新 (documentation)
+- **style** 💄 - 代码格式调整 (formatting, missing semi colons, etc.)
+- **refactor** 🔧 - 重构 (refactoring production code)
+- **perf** ⚡ - 性能优化 (performance improvements)
+- **test** ✅ - 测试相关 (adding tests, refactoring tests)
+- **chore** 🧹 - 构建/工具/配置 (build process, auxiliary tools, libraries)
+
+### 3. 内容原则
+- **Subject**: 一句话概括核心产出，不超过50字
+- **Scope**: 影响范围（如：core, ui, api, docs等）
+- **Body**: 使用无序列表，包含业务语境，说明做了什么、为什么做
+- **侧重点**: 功能变化和业务价值，而非代码量变化
+- **简洁性**: 每个描述点控制在20字以内
+
+### 4. 安全检查
+如果 diff 中包含以下敏感信息，请仅返回 **"SECURITY_ALERT: 检测到敏感信息"**：
+- API密钥、密码、Token
+- 个人隐私信息
+- 内部机密数据
+- 信用卡号等财务信息
+
+### 5. 示例
+
+#### 示例1: 新功能
+```
+feat(core): 实现用户认证模块
+
+✨ 新增JWT token认证机制
+✨ 实现用户登录/注册/登出功能
+🔧 集成密码加密存储
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+#### 示例2: Bug修复
+```
+🐛 fix(api): 修复数据查询返回错误的问题
+
+🐛 修正查询条件的逻辑错误
+🐛 添加边界情况处理
+✅ 补充单元测试覆盖
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+#### 示例3: 文档更新
+```
+📝 docs: 更新API使用文档
+
+📝 补充接口参数说明
+📝 添加使用示例代码
+📝 修正格式错误
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+---
+
+现在请分析上面的 git diff 内容，生成符合规范的 commit 消息。
+
+**重要**: 只返回最终的 commit 消息内容，不要添加任何其他解释或说明。
