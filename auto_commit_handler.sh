@@ -74,9 +74,72 @@ check_changes() {
     return 0
 }
 
+# 获取项目上下文信息
+get_project_context() {
+    local context=""
+    local max_context_lines=50
+
+    # 读取 CLAUDE.md（如果存在）
+    if [ -f "CLAUDE.md" ]; then
+        local claude_md=$(head -n "$max_context_lines" CLAUDE.md 2>/dev/null)
+        if [ -n "$claude_md" ]; then
+            context="${context}## CLAUDE.md (项目指引):\n${claude_md}\n\n"
+        fi
+    fi
+
+    # 读取 README.md（如果存在）
+    if [ -f "README.md" ]; then
+        local readme=$(head -n 30 README.md 2>/dev/null)
+        if [ -n "$readme" ]; then
+            context="${context}## README.md (项目说明):\n${readme}\n\n"
+        fi
+    fi
+
+    # 获取项目基本信息
+    local project_name=$(basename "$PWD")
+    local git_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+    local git_remote=$(git remote get-url origin 2>/dev/null || echo "无远程仓库")
+
+    context="## 项目基本信息:\n"
+    context="${context}- 项目名: ${project_name}\n"
+    context="${context}- 当前分支: ${git_branch}\n"
+    context="${context}- 远程仓库: ${git_remote}\n\n"
+    context="${context}${context}"
+
+    echo -e "$context"
+}
+
+# 获取变更统计信息
+get_diff_stats() {
+    local stats=""
+
+    # 获取未staged的变更文件
+    local changed_files=$(git diff --name-status --no-color 2>/dev/null | head -20)
+    if [ -n "$changed_files" ]; then
+        stats="${stats}### 未暂存变更 (Unstaged):\n${changed_files}\n"
+    fi
+
+    # 获取staged的变更文件
+    local staged_files=$(git diff --staged --name-status --no-color 2>/dev/null | head -20)
+    if [ -n "$staged_files" ]; then
+        stats="${stats}### 已暂存变更 (Staged):\n${staged_files}\n"
+    fi
+
+    # 获取未跟踪文件
+    local untracked_files=$(git ls-files --others --exclude-standard 2>/dev/null | head -20)
+    if [ -n "$untracked_files" ]; then
+        stats="${stats}### 新增文件 (Untracked):\n"
+        while IFS= read -r file; do
+            stats="${stats}A  ${file}\n"
+        done <<< "$untracked_files"
+    fi
+
+    echo -e "$stats"
+}
+
 # 获取git diff内容
 get_diff() {
-    local max_lines="${1:-200}"
+    local max_lines="${1:-500}"  # 增加到500行
 
     # 先获取所有变更的文件
     local changed_files
@@ -95,7 +158,11 @@ get_diff() {
         local staged_diff
         staged_diff=$(git diff --staged --unified=3 --no-color 2>/dev/null | head -n "$max_lines")
         if [ -n "$staged_diff" ]; then
-            diff_content="${diff_content}${staged_diff}"
+            if [ -n "$diff_content" ]; then
+                diff_content="${diff_content}\n\n## Staged Changes:\n${staged_diff}"
+            else
+                diff_content="${staged_diff}"
+            fi
         fi
     fi
 
@@ -111,12 +178,14 @@ get_diff() {
         fi
     fi
 
-    echo "$diff_content"
+    echo -e "$diff_content"
 }
 
 # 使用Claude API生成commit消息
 generate_commit_message_claude() {
     local diff_content="$1"
+    local project_context="$2"
+    local diff_stats="$3"
 
     # 检查是否安装了node
     if ! check_command node; then
@@ -133,9 +202,12 @@ generate_commit_message_claude() {
         prompt_template="请根据以下git diff生成一条commit消息。格式: <type>: <subject>\n\n- <detail1>\n\n${diff_content}"
     fi
 
-    # 替换{{DIFF_CONTENT}}占位符
-    local prompt
-    prompt="${prompt_template//\{\{DIFF_CONTENT\}\}/$(echo "$diff_content" | sed 's/"/\\"/g' | tr '\n' '\\n')}"
+    # 替换占位符
+    # 注意替换顺序，先替换长内容
+    local prompt="$prompt_template"
+    prompt="${prompt//\{\{DIFF_CONTENT\}\}/$diff_content}"
+    prompt="${prompt//\{\{DIFF_STATS\}\}/$diff_stats}"
+    prompt="${prompt//\{\{PROJECT_CONTEXT\}\}/$project_context}"
 
     # 检查API Key
     if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
@@ -304,9 +376,37 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 EOF
 }
 
+# 清理commit消息（去除代码块包裹等格式问题）
+clean_commit_message() {
+    local msg="$1"
+
+    # 去除可能存在的 ``` 代码块包裹
+    # 情况1: 开头有 ```
+    if [[ "$msg" =~ ^\`\`\` ]]; then
+        msg=$(echo "$msg" | sed '1d' | sed '$d')
+    fi
+
+    # 情况2: 开头有 ``` 后面有语言标识
+    msg=$(echo "$msg" | sed 's/^\`\`\`[a-z]*\n//')
+
+    # 去除尾部可能残留的 ```
+    msg=$(echo "$msg" | sed 's/\n\`\`\`$//')
+
+    # 去除首尾空白行
+    msg=$(echo "$msg" | sed -e '/./,$!d' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')
+
+    # 去除开头的 "```" 可能（单行情况）
+    msg=$(echo "$msg" | sed 's/^[[:space:]]*\`\`\`[[:space:]]*//')
+
+    echo "$msg"
+}
+
 # 执行git commit
 do_commit() {
     local commit_msg="$1"
+
+    # 清理消息格式
+    commit_msg=$(clean_commit_message "$commit_msg")
 
     # 检查是否有敏感信息警告
     if [[ "$commit_msg" == *"SECURITY_ALERT"* ]]; then
@@ -349,6 +449,16 @@ main() {
         return 0
     fi
 
+    # 获取项目上下文
+    log "正在收集项目上下文..."
+    local project_context
+    project_context=$(get_project_context)
+
+    # 获取变更统计
+    log "正在获取变更统计..."
+    local diff_stats
+    diff_stats=$(get_diff_stats)
+
     # 获取diff内容
     log "正在获取git diff..."
     local diff_content
@@ -367,7 +477,7 @@ main() {
 
     if [ "$USE_CLAUDE_API" = "true" ]; then
         # 优先使用Claude API
-        commit_msg=$(generate_commit_message_claude "$diff_content")
+        commit_msg=$(generate_commit_message_claude "$diff_content" "$project_context" "$diff_stats")
     fi
 
     # 备用方案
