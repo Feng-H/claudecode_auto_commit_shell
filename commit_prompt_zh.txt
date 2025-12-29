@@ -17,10 +17,6 @@ type(scope): subject
 icon 详细描述1
 icon 详细描述2
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-
 ### 2. Type 类型（仅限以下8种）
 feat ✨ - 新功能
 fix 🐛 - Bug修复
@@ -56,19 +52,11 @@ feat(auth): 实现JWT用户认证
 ✨ 支持用户登录/注册接口
 🔧 密码使用bcrypt加密存储
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-
 示例2 - Bug修复:
 fix(api): 修复查询条件错误
 🐛 修正WHERE语句逻辑错误
 🐛 处理空值边界情况
 ✅ 补充单元测试覆盖
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 示例3 - 文档:
 docs(readme): 更新部署文档
@@ -76,19 +64,11 @@ docs(readme): 更新部署文档
 📝 添加环境变量配置说明
 📝 修正示例代码格式
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-
 示例4 - 重构:
 refactor(user): 重构用户数据结构
 🔧 统一用户信息字段定义
 🔧 简化数据访问层逻辑
 ✅ 更新相关测试用例
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 ## 安全检查
 如果 diff 中包含以下内容，仅返回 "SECURITY_ALERT: 检测到敏感信息":

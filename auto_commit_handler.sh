@@ -370,11 +370,7 @@ generate_commit_message_local() {
     cat <<EOF
 ${type}(*): 自动保存工作进度 $(date '+%Y-%m-%d %H:%M')
 
-${icon} 自动提交 Claude Code 会话变更
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+${icon} 自动提交会话变更
 EOF
 }
 
