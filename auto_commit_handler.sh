@@ -100,11 +100,13 @@ get_project_context() {
     local git_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
     local git_remote=$(git remote get-url origin 2>/dev/null || echo "无远程仓库")
 
-    context="## 项目基本信息:\n"
-    context="${context}- 项目名: ${project_name}\n"
-    context="${context}- 当前分支: ${git_branch}\n"
-    context="${context}- 远程仓库: ${git_remote}\n\n"
-    context="${context}${context}"
+    # 组装基本信息（放在文件内容之前）
+    local basic_info="## 项目基本信息:\n"
+    basic_info="${basic_info}- 项目名: ${project_name}\n"
+    basic_info="${basic_info}- 当前分支: ${git_branch}\n"
+    basic_info="${basic_info}- 远程仓库: ${git_remote}\n\n"
+
+    context="${basic_info}${context}"
 
     echo -e "$context"
 }
