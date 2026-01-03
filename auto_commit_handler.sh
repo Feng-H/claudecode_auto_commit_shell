@@ -67,10 +67,45 @@ check_git_repo() {
 
 # 检查是否有变更
 check_changes() {
-    if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+    local has_changes=0
+
+    # 检查 git status 输出
+    local status_output
+    status_output=$(git status --porcelain 2>/dev/null)
+
+    # 检查是否有 staged、unstaged 或 untracked 文件
+    if [ -n "$status_output" ]; then
+        has_changes=1
+    fi
+
+    # 额外检查：对于新初始化的仓库，检查是否有未跟踪的文件
+    if [ "$has_changes" -eq 0 ]; then
+        local untracked_files
+        untracked_files=$(git ls-files --others --exclude-standard 2>/dev/null)
+        if [ -n "$untracked_files" ]; then
+            has_changes=1
+            log "检测到未跟踪文件: $untracked_files"
+        fi
+    fi
+
+    # 最后的兜底检查：如果刚初始化且有文件，尝试执行 git add
+    if [ "$has_changes" -eq 0 ]; then
+        # 检查是否是刚初始化的空仓库（没有任何commit）
+        if ! git rev-parse HEAD >/dev/null 2>&1; then
+            log "检测到新初始化的git仓库"
+            # 检查工作目录是否有文件
+            if [ -n "$(ls -A 2>/dev/null)" ]; then
+                has_changes=1
+                log "检测到工作目录中有文件，准备首次提交"
+            fi
+        fi
+    fi
+
+    if [ "$has_changes" -eq 0 ]; then
         log "没有检测到变更，跳过commit"
         return 1
     fi
+
     return 0
 }
 
@@ -331,7 +366,8 @@ generate_commit_message_claude() {
         })();
     " 2>&1)
 
-    if [ $? -eq 0 ] && [ -n "$commit_msg" ]; then
+    local exit_code=$?
+    if [ $exit_code -eq 0 ] && [ -n "$commit_msg" ]; then
         echo "$commit_msg"
         return 0
     else
@@ -475,7 +511,13 @@ main() {
 
     if [ "$USE_CLAUDE_API" = "true" ]; then
         # 优先使用Claude API
-        commit_msg=$(generate_commit_message_claude "$diff_content" "$project_context" "$diff_stats")
+        commit_msg=$(generate_commit_message_claude "$diff_content" "$project_context" "$diff_stats") || true
+        local api_exit_code=$?
+        # 检查返回码，如果失败则清空以触发fallback
+        if [ $api_exit_code -ne 0 ]; then
+            log "Claude API调用失败，使用本地fallback"
+            commit_msg=""
+        fi
     fi
 
     # 备用方案
