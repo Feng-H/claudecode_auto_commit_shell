@@ -25,3 +25,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Gemini Code Review
+gemini-code-review/
+claude-code-review/

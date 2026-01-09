@@ -16,21 +16,21 @@ LOG_FILE="$HOME/.claude/ac_handler.log"
 log() {
     local message="$*"
     # 过滤掉可能包含敏感信息的内容
-    echo "$message" | grep -vE "(password|secret|key|token|api_key|diff_content)" >> "$LOG_FILE" 2>/dev/null || true
+    echo "$message" | grep -vE "(password|secret|key|token|api_key|ANTHROPIC|diff_content)" >> "$LOG_FILE" 2>/dev/null || true
 }
 
 # 加载配置文件
 load_config() {
     if [ -f "$CONFIG_FILE" ]; then
         source "$CONFIG_FILE"
-    else
-        # 默认配置
-        COMMIT_LANGUAGE="${COMMIT_LANGUAGE:-zh-CN}"
-        AUTO_INIT="${AUTO_INIT:-true}"
-        MAX_DIFF_LINES="${MAX_DIFF_LINES:-200}"
-        USE_CLAUDE_API="${USE_CLAUDE_API:-true}"
-        API_TIMEOUT="${API_TIMEOUT:-30}"
     fi
+    # 默认配置（如果配置文件中没有设置）
+    COMMIT_LANGUAGE="${COMMIT_LANGUAGE:-zh-CN}"
+    AUTO_INIT="${AUTO_INIT:-true}"
+    MAX_DIFF_LINES="${MAX_DIFF_LINES:-500}"
+    USE_CLAUDE_API="${USE_CLAUDE_API:-true}"
+    API_TIMEOUT="${API_TIMEOUT:-30}"
+    CLAUDE_MODEL="${CLAUDE_MODEL:-claude-sonnet-4-5-20250929}"
 }
 
 # 检查命令是否存在
@@ -39,6 +39,7 @@ check_command() {
         log "错误: 命令 $1 未找到"
         return 1
     fi
+    return 0
 }
 
 # 检查并初始化git仓库
@@ -230,6 +231,12 @@ generate_commit_message_claude() {
         return 1
     fi
 
+    # 检查是否安装了jq (用于JSON转义)
+    if ! check_command jq; then
+        log "错误: 未找到jq命令，无法进行JSON转义"
+        return 1
+    fi
+
     # 读取提示词模板
     local prompt_template
     if [ -f "$PROMPT_TEMPLATE_ZH" ]; then
@@ -255,20 +262,9 @@ generate_commit_message_claude() {
     local base_url="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
     log "使用 API endpoint: $base_url"
 
-    # 从 URL 中提取 hostname 和 port
-    local api_host
-    local api_port
-    if [[ "$base_url" =~ ^https?://([^/:]+)(:([0-9]+))? ]]; then
-        api_host="${BASH_REMATCH[1]}"
-        api_port="${BASH_REMATCH[3]:-443}"
-    else
-        api_host="api.anthropic.com"
-        api_port="443"
-    fi
-
     # 使用Node.js调用Claude API
     local commit_msg
-    commit_msg=$(ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" ANTHROPIC_BASE_URL="$base_url" node -e "
+    commit_msg=$(CLAUDE_MODEL="$CLAUDE_MODEL" ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" ANTHROPIC_BASE_URL="$base_url" node -e "
         const https = require('https');
         const url = require('url');
 
@@ -294,7 +290,7 @@ generate_commit_message_claude() {
         }
 
         const data = JSON.stringify({
-            model: 'claude-sonnet-4-5-20250929',
+            model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-5-20250929',
             max_tokens: 1024,
             messages: [{
                 role: 'user',
@@ -414,23 +410,18 @@ EOF
 clean_commit_message() {
     local msg="$1"
 
-    # 去除可能存在的 ``` 代码块包裹
-    # 情况1: 开头有 ```
-    if [[ "$msg" =~ ^\`\`\` ]]; then
-        msg=$(echo "$msg" | sed '1d' | sed '$d')
-    fi
-
-    # 情况2: 开头有 ``` 后面有语言标识
-    msg=$(echo "$msg" | sed 's/^\`\`\`[a-z]*\n//')
-
-    # 去除尾部可能残留的 ```
-    msg=$(echo "$msg" | sed 's/\n\`\`\`$//')
-
-    # 去除首尾空白行
-    msg=$(echo "$msg" | sed -e '/./,$!d' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')
-
-    # 去除开头的 "```" 可能（单行情况）
-    msg=$(echo "$msg" | sed 's/^[[:space:]]*\`\`\`[[:space:]]*//')
+    # 一次sed调用完成所有清理
+    msg=$(echo "$msg" | sed -e '
+        # 去除首尾空白行
+        /./,$!d
+        :a
+        /^\n*$/{$d;N;ba}
+        # 去除开头的 ``` (可能带语言标识)
+        s/^\`\`\`[a-z]*\n//
+        s/^[[:space:]]*\`\`\`[[:space:]]*//
+        # 去除尾部的 ```
+        s/\n\`\`\`$//
+    ')
 
     echo "$msg"
 }
