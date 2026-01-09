@@ -1,30 +1,33 @@
 # Claude Code 自动Commit 功能
 
-Claude Code 会话结束时自动执行 git commit 的功能，使用 Claude API 生成规范的中文 commit 消息。
+Claude Code 会话结束时自动执行 git commit 的功能，使用 Claude API 生成规范的中文/英文 commit 消息。
 
 [English Documentation](README_EN.md) | 中文文档
 
 ## 功能特性
 
-- ✅ **自动触发**：Claude Code 会话结束时自动执行
-- ✅ **智能生成消息**：使用 Claude API 分析代码变化，生成规范的 commit 消息
-- ✅ **中文/英文支持**：可配置中文或英文 commit 消息
-- ✅ **自动初始化**：非 git 项目自动执行 git init
-- ✅ **安全检查**：检测敏感信息，防止意外提交
-- ✅ **自定义 API Endpoint**：支持自定义 Claude API 地址（兼容代理）
-- ✅ **配置灵活**：支持多种配置选项
-- ✅ **优雅降级**：API 失败时自动使用本地模板生成消息
+- **自动触发**：Claude Code 会话结束时自动执行
+- **智能生成消息**：使用 Claude API 分析代码变化，生成规范的 commit 消息
+- **多语言支持**：支持中文和英文 commit 消息
+- **自动初始化**：非 git 项目自动执行 git init
+- **安全检查**：检测敏感信息，防止意外提交
+- **自定义 API**：支持自定义 Claude API 地址（兼容代理）
+- **模型选择**：可配置 Claude 模型（如 claude-sonnet-4-5）
+- **配置灵活**：支持多种配置选项
+- **优雅降级**：API 失败时自动使用本地模板生成消息
 
 ---
 
 ## 快速安装
 
-### 方法一：一键安装脚本（推荐）
+### 方法一：一键安装（推荐）
 
 ```bash
-cd /path/to/claudecode/auto-commit
+cd /path/to/auto-commit
 bash install.sh
 ```
+
+安装完成后，在 Claude Code 中按 `Cmd+Shift+H`，选择 "Reload hooks" 即可激活。
 
 ### 方法二：手动安装
 
@@ -80,9 +83,7 @@ chmod +x ~/.claude/scripts/auto_commit_handler.sh
 
 #### 步骤5：激活 Hooks
 
-1. 在 Claude Code 中按 `Cmd+Shift+H` 打开 Hooks 菜单
-2. 选择 "Reload hooks"
-3. 或者重启 Claude Code
+在 Claude Code 中按 `Cmd+Shift+H` 打开 Hooks 菜单，选择 "Reload hooks"，或重启 Claude Code。
 
 ---
 
@@ -98,18 +99,21 @@ COMMIT_LANGUAGE=zh-CN
 AUTO_INIT=true
 
 # 最大分析diff行数（避免token浪费）
-MAX_DIFF_LINES=200
+MAX_DIFF_LINES=500
 
 # 使用Claude API生成commit消息
 USE_CLAUDE_API=true
 
 # API超时时间（秒）
 API_TIMEOUT=30
+
+# Claude模型名称（可选）
+CLAUDE_MODEL=claude-sonnet-4-5-20250929
 ```
 
 ### 环境变量
 
-> **⚠️ 重要提醒**
+> **重要提醒**
 >
 > **不要**将 `ANTHROPIC_API_KEY` 和 `ANTHROPIC_BASE_URL` 放入 `~/.claude/settings.json` 中！
 > 这样会导致 API 调用失败。请将它们配置在环境变量中。
@@ -262,8 +266,16 @@ git status
 
 ## 卸载
 
+### 使用卸载脚本（推荐）
+
 ```bash
-# 删除 hooks 配置
+cd /path/to/auto-commit
+bash uninstall.sh
+```
+
+### 手动卸载
+
+```bash
 # 编辑 ~/.claude/settings.json，删除 hooks 部分
 
 # 删除文件
@@ -272,7 +284,6 @@ rm ~/.claude/scripts/auto_commit_handler.sh
 rm ~/.claude/templates/commit_prompt_zh.txt
 rm ~/.claude/ac_handler.log
 
-# 重新加载 hooks
 # 在 Claude Code 中按 Cmd+Shift+H，选择 "Reload hooks"
 ```
 
@@ -327,7 +338,7 @@ auto_commit_handler.sh 执行
 
 - [Claude Code Hooks 文档](https://code.claude.com/docs/en/hooks)
 - [Conventional Commits 规范](https://www.conventionalcommits.org/)
-- [Gemini CLI auto-commit](https://github.com/) - 灵感来源
+- [Anthropic API 文档](https://docs.anthropic.com/)
 
 ---
 
@@ -346,6 +357,13 @@ GPL-3.0 License
 ---
 
 ## 更新日志
+
+### v1.2.0 (2025-01-09)
+- ✨ 新增 `CLAUDE_MODEL` 配置选项，支持自定义模型
+- ✨ 提高默认 `MAX_DIFF_LINES` 至 500 行
+- 🔧 优化代码审查发现的安全与质量问题
+- 🔧 增强日志过滤，防止 API Key 泄漏
+- ✅ 新增 jq 依赖检查
 
 ### v1.1.0 (2025-12-23)
 - ✨ 新增支持自定义 API Endpoint (`ANTHROPIC_BASE_URL`)
