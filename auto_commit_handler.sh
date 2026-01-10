@@ -410,18 +410,10 @@ EOF
 clean_commit_message() {
     local msg="$1"
 
-    # 一次sed调用完成所有清理
-    msg=$(echo "$msg" | sed -e '
-        # 去除首尾空白行
-        /./,$!d
-        :a
-        /^\n*$/{$d;N;ba}
-        # 去除开头的 ``` (可能带语言标识)
-        s/^\`\`\`[a-z]*\n//
-        s/^[[:space:]]*\`\`\`[[:space:]]*//
-        # 去除尾部的 ```
-        s/\n\`\`\`$//
-    ')
+    # 清理消息：去除代码块标记和首尾空白
+    msg=$(echo "$msg" | sed -e 's/^\`\`\`[a-z]*//' -e 's/^[[:space:]]*\`\`\`[[:space:]]*//' -e '/^[[:space:]]*$/d' | sed -e :a -e '/^\n*$/ {$d;N;ba' -e '}')
+    # 去除尾部的 ```（跨行匹配）
+    msg=$(echo "$msg" | sed -e '$s/`\`\`$//')
 
     echo "$msg"
 }
